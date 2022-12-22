@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "Aviva"
+version = "0.0.1"
+description = "aviva reporting tools"
+authors = ["Mondo Analytics Team"]
+
+[[tool.poetry.source]]
+name = "mondo"
+url = "https://mondo-artifacts-290556015539.d.codeartifact.ap-southeast-2.amazonaws.com/pypi/MondoPythonPackages/simple/"
+secondary = true
+
+[tool.poetry.dependencies]
+python = "3.9.*"
+boto3 = "*"
+openpyxl = "*"
+beautifulsoup4 = "*"
+requests = "*"
+mondo-ds-etl = {version = "0.0.31", source = "mondo"}
+mondo-ds-timeseries-tools = {version = "0.0.10", source = "mondo"}

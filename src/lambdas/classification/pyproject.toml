@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "Aviva"
+version = "0.0.1"
+description = "aviva reporting tools"
+authors = ["Mondo Analytics Team"]
+
+[tool.poetry.dependencies]
+python = "3.9.*"
+pandas = "*"
+boto3 = "*"
+openpyxl = "*"
+beautifulsoup4 = "*"
+requests = "*"
+
