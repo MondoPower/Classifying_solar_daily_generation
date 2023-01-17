@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "simple_nn_model_generation"
+version = "0.0.1"
+description = "Generator lambda for 2021 NN models based solely on weather"
+authors = ["Aaron Rizzuto"]
+
+[[tool.poetry.source]]
+name = "mondo"
+url = "https://mondo-artifacts-290556015539.d.codeartifact.ap-southeast-2.amazonaws.com/pypi/MondoPythonPackages/simple/"
+secondary = true
+
+[tool.poetry.dependencies]
+python = "~3.9"
+boto3 = "*"
+pandas = "*"
+mondo-ds-etl = {version = "0.0.38", source = "mondo"}
+mondo-ds-timeseries-tools = {version = "0.0.10", source = "mondo"}
+scikit-learn = "*"
+matplotlib = "^3.5.3"
+plotly = "*"
+
