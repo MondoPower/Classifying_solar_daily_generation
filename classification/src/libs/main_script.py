@@ -6,13 +6,19 @@ import os
 import numpy as np
 import pandas as pd
 import pdb
+import manipulating_data
 
 
 
 location_id = '0780ec0b-56fa-4242-88ae-0355069045bf'
 daterange = {"start_date": '2022-08-19T00:00:00Z', "end_date": '2022-10-19T00:00:00Z'}
 start_date,end_date = data_gathering.get_date_range(daterange)
-loc_data, location_config = data_gathering.get_location_full(location_id)
+df, location_config = data_gathering.get_location_full(location_id)
+df = manipulating_data.manipulate_data(df)
+df_high_low= manipulating_data.return_high_low_solar(df)
+weather = pd.read_csv('solcast_data.csv',delimiter='\t')
+merged_data=data_gathering.manipulate_weather_data(weather,df_high_low)
+
 
 # for loc in locations.location_id.unique()[0:1]:
 #     final_df, pv_training_cols, weather_cols = data_gathering.gather_dataset_for_location(loc)
