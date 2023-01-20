@@ -43,26 +43,26 @@ def manipulate_weather_data(weather,df):
     merged_df.drop(columns=['pv_all'], inplace=True)
     merged_df.drop_duplicates(inplace=True)
     merged_df = merged_df.fillna(0.0)
+    merged_df['date'] = merged_df.time.dt.strftime('%y-%m-%d')
     # average over day and then make day as index
     pdb.set_trace()
 
-    #resampling to hourly
+    
 
-    merged_df = merged_df.set_index('time')
-    Hourly = merged_df.resample('H').sum()
-    Hourly.reset_index(inplace=True)
-    daily['average_over_dayTem']= daily.groupby(['time'])['air_temp'].mean()
-    daily.drop_duplicates(inplace=True)
-    daily = daily.fillna(0.0)
+    
 
-    #resampling to daily
+   
 
-    merged_df = merged_df.set_index('time')
-    daily = merged_df.resample('D').sum()
-    daily.reset_index(inplace=True)
-    daily['average_over_dayTem']= daily.groupby(['time'])['air_temp'].mean()
-    daily.drop_duplicates(inplace=True)
-    daily = daily.fillna(0.0)
+
+
+    # use this colum method and then merge with original dataframe
+
+    df_new= merged_df.merge(merged_df.groupby('date')['air_temp'].mean(), on='date')
+    # daily = merged_df.resample('D').sum()
+    # daily.reset_index(inplace=True)
+    # daily['average_over_dayTem']= daily.groupby(['time'])['air_temp'].mean()
+    # daily.drop_duplicates(inplace=True)
+    # daily = daily.fillna(0.0)
 
     #resampling to monthly
 

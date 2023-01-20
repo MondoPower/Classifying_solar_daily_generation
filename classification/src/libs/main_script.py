@@ -14,8 +14,10 @@ import model_generation
 
 location_id = '0780ec0b-56fa-4242-88ae-0355069045bf'
 daterange = {"start_date": '2022-08-19T00:00:00Z', "end_date": '2022-10-19T00:00:00Z'}
-start_date,end_date = data_gathering.get_date_range(daterange)
-df, location_config = data_gathering.get_location_full(location_id)
+# start_date,end_date = data_gathering.get_date_range(daterange)
+# df, location_config = data_gathering.get_location_full(location_id)
+df.to_csv('full_data.csv')
+df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
 df_high_low = manipulating_data.statistical_labeling(df)
 weather = pd.read_csv('solcast.csv')
