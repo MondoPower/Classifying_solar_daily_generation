@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 import pdb
 import manipulating_data
+import plotly.graph_objs as go
+import model_generation
 
 
 
@@ -15,9 +17,15 @@ daterange = {"start_date": '2022-08-19T00:00:00Z', "end_date": '2022-10-19T00:00
 start_date,end_date = data_gathering.get_date_range(daterange)
 df, location_config = data_gathering.get_location_full(location_id)
 df = manipulating_data.manipulate_data(df)
-df_high_low= manipulating_data.return_high_low_solar(df)
-weather = pd.read_csv('solcast_data.csv',delimiter='\t')
-merged_data=data_gathering.manipulate_weather_data(weather,df_high_low)
+df_high_low = manipulating_data.statistical_labeling(df)
+weather = pd.read_csv('solcast.csv')
+
+merged_df = manipulating_data.manipulate_weather_data(weather,df_high_low)
+pdb.set_trace()
+predictions = model_generation.LogisticRegression_model(merged_df)
+
+manipulating_data.plot_models(merged_df)
+
 
 
 # for loc in locations.location_id.unique()[0:1]:

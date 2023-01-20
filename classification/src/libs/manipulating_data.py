@@ -32,7 +32,61 @@ def manipulate_data(df):
 
     return    df 
 
-def return_high_low_solar(df):
+def manipulate_weather_data(weather,df):
+
+    weather.drop(columns=[
+                        'solcastsiteid', 'postcode', 'periodtype', 'forecasttimeoffset','azimuth','zenith'], inplace=True)
+    
+    weather['time'] = pd.to_datetime(weather.time, utc=True)
+    
+    merged_df = df.merge(weather,on='time')
+    merged_df.drop(columns=['pv_all'], inplace=True)
+    merged_df.drop_duplicates(inplace=True)
+    merged_df = merged_df.fillna(0.0)
+    # average over day and then make day as index
+    pdb.set_trace()
+
+    #resampling to hourly
+
+    merged_df = merged_df.set_index('time')
+    Hourly = merged_df.resample('H').sum()
+    Hourly.reset_index(inplace=True)
+    daily['average_over_dayTem']= daily.groupby(['time'])['air_temp'].mean()
+    daily.drop_duplicates(inplace=True)
+    daily = daily.fillna(0.0)
+
+    #resampling to daily
+
+    merged_df = merged_df.set_index('time')
+    daily = merged_df.resample('D').sum()
+    daily.reset_index(inplace=True)
+    daily['average_over_dayTem']= daily.groupby(['time'])['air_temp'].mean()
+    daily.drop_duplicates(inplace=True)
+    daily = daily.fillna(0.0)
+
+    #resampling to monthly
+
+    monthly = daily.resample('M').sum()
+
+
+    # merged_df = merged_df.set_index('week_day')
+  
+    # merged_df_aggregate.reset_index(inplace=True)
+
+    return merged_df
+
+#  def add_day(merged_df):
+    
+#     dates=[]
+#     for i in range(0,len(merged_df['time'])):
+#         example_time=merged_df['time'].iloc[i]
+#         mytimezone = example_time.astimezone(datetime.timezone(datetime.timedelta(days=10), name='GMT+10'))
+#         dates.append(mytimezone)
+#     output_df['time_NEM']=dates
+    
+#     return output_df
+
+def statistical_labeling(df):
     
     pv_max = df.groupby(["time",'week_day'])["pv_all"].sum()
     print("Max pv %: ", df['pv_all'].max())
@@ -43,9 +97,19 @@ def return_high_low_solar(df):
 
     #labeling by hand
     df['pv_labeled'] = np.where(df['pv_all']>=4000, '1', '0')
-    # fig = go.Figure()
-    # fig.add_trace(go.Scattergl(x=df['week_day'], y=df[df['pv_labeled']==1],mode='lines', name='label max', line=dict(color='purple', dash='dash')))
-    # fig.add_trace(go.Scattergl(x=df['week_day'], y=df[df['pv_labeled']==0], mode='lines', name='label_min', line=dict(color='orange')))
 
-    # fig.show()
     return df
+
+def plot_models(merged_df):
+
+    
+    fig = go.Figure()
+  
+    fig.add_trace(go.Scattergl(x=merged_df['time'], y=merged_df['pv_all'],mode='lines', name='label max', line=dict(color='purple', dash='dash')))
+    fig.add_trace(go.Scattergl(x=merged_df['time'], y=merged_df[merged_df['pv_labeled']==1], mode='lines', name='label_min', line=dict(color='blue',dash='dash')))
+    fig.update_xaxes(title_text=f"{location} UTC")
+    fig.update_yaxes(title_text=tcol)
+    fig.show()
+
+    return 
+
