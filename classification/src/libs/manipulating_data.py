@@ -17,6 +17,7 @@ import pdb
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objs as go
+from dateutil.parser import parse
 
 def manipulate_data(df):
 
@@ -45,46 +46,77 @@ def manipulate_weather_data(weather,df):
     merged_df = merged_df.fillna(0.0)
     merged_df['date'] = merged_df.time.dt.strftime('%y-%m-%d')
     # average over day and then make day as index
-    pdb.set_trace()
-
-    
-
-    
-
    
+    daily= merged_df.groupby('date')['air_temp'].mean()
+    days_aggregated = pd.DataFrame(daily)
+    days_aggregated.rename(columns={'air_temp':'average_tem'},inplace =True)
+    df_new_day= merged_df.merge(days_aggregated, on='date')
+    #df_new_daily = df_new.set_index('date')
 
+    # max over a day
 
+    daily_max = merged_df.groupby('date')['air_temp'].max()
+    days_max = pd.DataFrame(daily_max)
+    days_max.rename(columns={'air_temp':'max_tem'},inplace =True)
+    df_max_day= df_new_day.merge(days_max, on='date')
 
-    # use this colum method and then merge with original dataframe
+     # min over a day
 
-    df_new= merged_df.merge(merged_df.groupby('date')['air_temp'].mean(), on='date')
-    # daily = merged_df.resample('D').sum()
-    # daily.reset_index(inplace=True)
-    # daily['average_over_dayTem']= daily.groupby(['time'])['air_temp'].mean()
-    # daily.drop_duplicates(inplace=True)
-    # daily = daily.fillna(0.0)
+    daily_min = merged_df.groupby('date')['air_temp'].min()
+    days_min = pd.DataFrame(daily_min)
+    days_min.rename(columns={'air_temp':'min_tem'},inplace =True)
+    df_min_day= df_max_day.merge(days_min, on='date')
 
-    #resampling to monthly
+    # midd of the day 
 
-    monthly = daily.resample('M').sum()
+    idx = pd.date_range("2022-08-19", periods=24, freq="H")
+    ts = pd.Series(range(len(idx)), index=idx)
+    ts = pd.Series(range(len(idx)), index=idx)
+    ts.resample("12H").mean()
 
+    return df_min_day
+ 
 
-    # merged_df = merged_df.set_index('week_day')
-  
-    # merged_df_aggregate.reset_index(inplace=True)
-
-    return merged_df
-
-#  def add_day(merged_df):
+def day_of_year(df_min_day):
     
-#     dates=[]
-#     for i in range(0,len(merged_df['time'])):
-#         example_time=merged_df['time'].iloc[i]
-#         mytimezone = example_time.astimezone(datetime.timezone(datetime.timedelta(days=10), name='GMT+10'))
-#         dates.append(mytimezone)
-#     output_df['time_NEM']=dates
+    date_series = pd.Series(df_min_day['date'])
+    date_series = date_series.map(lambda x: parse(x))
+    day_year = date_series.dt.dayofyear
+    day_year = pd.DataFrame(day_year)
+    day_year.rename(columns = {'date':'d_y'}, inplace = True)
+    df_min_day = pd.concat([day_year, df_min_day], axis = 1)
     
-#     return output_df
+    return df_min_day
+
+def month_of_year(df_min_day):
+    pdb.set_trace()
+    date_series = pd.Series(df_min_day['date'])
+    date_series = date_series.map(lambda x: parse(x))
+    month_year = date_series.dt.month
+    month_year = pd.DataFrame(month_year)
+    month_year.rename(columns = {'date':'m_y'}, inplace = True)
+    df_min_day = pd.concat([month_year, df_min_day], axis = 1)
+
+    return df_min_day
+
+
+def doy(df_min_day):
+ 
+    K=2
+    N = int((275 * M) / 9.0) - K * int((M + 9) / 12.0) + D - 30
+    return N
+
+def year_month_day(Y,N):
+   
+    if is_leap_year(Y):
+        K = 1
+    else:
+        K = 2
+    M = int((9 * (K + N)) / 275.0 + 0.98)
+    if N < 32:
+        M = 1
+    D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
+    return Y, M, D
 
 def statistical_labeling(df):
     

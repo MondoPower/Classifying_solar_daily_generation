@@ -44,3 +44,5 @@ def get_location_full(location_id):
     loc_data['time'] = pd.to_datetime(loc_data.dates, utc=True)
 
     return loc_data, location_config
+
+    
