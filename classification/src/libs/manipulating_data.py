@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objs as go
 from dateutil.parser import parse
+from functools import reduce
 
 def manipulate_data(df):
 
@@ -33,94 +34,109 @@ def manipulate_data(df):
 
     return    df 
 
-def manipulate_weather_data(weather,df):
-
-    weather.drop(columns=[
-                        'solcastsiteid', 'postcode', 'periodtype', 'forecasttimeoffset','azimuth','zenith'], inplace=True)
+def manipulate_weather_data(weather):
     
     weather['time'] = pd.to_datetime(weather.time, utc=True)
-    
-    merged_df = df.merge(weather,on='time')
-    merged_df.drop(columns=['pv_all'], inplace=True)
-    merged_df.drop_duplicates(inplace=True)
-    merged_df = merged_df.fillna(0.0)
-    merged_df['date'] = merged_df.time.dt.strftime('%y-%m-%d')
-    # average over day and then make day as index
-   
-    daily= merged_df.groupby('date')['air_temp'].mean()
-    days_aggregated = pd.DataFrame(daily)
-    days_aggregated.rename(columns={'air_temp':'average_tem'},inplace =True)
-    df_new_day= merged_df.merge(days_aggregated, on='date')
-    #df_new_daily = df_new.set_index('date')
+    weather['date'] = weather.time.dt.strftime('%y-%m-%d')
+    weather['hour'] = weather.time.dt.hour
+    weather['month'] = weather.time.dt.month
+    weather['doy'] = weather.time.dt.dayofyear
+    weather['sin_doy'] = np.sin(2*np.pi*weather.doy/365.0)
+    weather['cos_doy'] = np.cos(2*np.pi*weather.doy/365.0)
 
+    weather.drop(columns=['solcastsiteid', 'postcode', 'periodtype', 'forecasttimeoffset','azimuth','zenith', 'time'], inplace=True)
+    wcols_to_agg = ['air_temp', 'cloud_opacity', 'dhi', 'dni', 'dni10', 'dni90', 'ebh', 'ghi', 'ghi10', 'ghi90']
+
+    # get just the points that happen 11-1?
+    
+    idx = np.where((weather['hour']<=1) | (weather['hour']>=11))
+    weather_mid = weather.loc[idx]
+    
+    # merged_df = df.merge(weather,on='time')
+    # merged_df.drop(columns=['pv_all'], inplace=True)
+    # merged_df.drop_duplicates(inplace=True)
+    # merged_df = merged_df.fillna(0.0)
+    # merged_df['date'] = merged_df.time.dt.strftime('%y-%m-%d')
+    
+    # average weather features over day and then make day as index
+    weather_day_ave = weather.groupby('date')[wcols_to_agg + ['month', 'hour', 'doy', 'sin_doy', 'cos_doy']].mean()
+    renamer = {col :col + '_mean' for col in wcols_to_agg}
+    weather_day_ave.rename(columns = renamer, inplace=True)
+    weather_day_ave.reset_index(inplace=True)
+    
     # max over a day
+    weather_day_max = weather.groupby('date')[wcols_to_agg].max()
+    renamer = {col :col + '_max' for col in wcols_to_agg}
+    weather_day_max.rename(columns = renamer, inplace=True)
+    weather_day_max.reset_index(inplace=True)
 
-    daily_max = merged_df.groupby('date')['air_temp'].max()
-    days_max = pd.DataFrame(daily_max)
-    days_max.rename(columns={'air_temp':'max_tem'},inplace =True)
-    df_max_day= df_new_day.merge(days_max, on='date')
-
-     # min over a day
-
-    daily_min = merged_df.groupby('date')['air_temp'].min()
-    days_min = pd.DataFrame(daily_min)
-    days_min.rename(columns={'air_temp':'min_tem'},inplace =True)
-    df_min_day= df_max_day.merge(days_min, on='date')
-
-    # midd of the day 
-
-    idx = pd.date_range("2022-08-19", periods=24, freq="H")
-    ts = pd.Series(range(len(idx)), index=idx)
-    ts = pd.Series(range(len(idx)), index=idx)
-    ts.resample("12H").mean()
-
-    return df_min_day
- 
-
-def day_of_year(df_min_day):
+    # min over a day
+    weather_day_min = weather.groupby('date')[wcols_to_agg].min()
+    renamer = {col :col + '_min' for col in wcols_to_agg}
+    weather_day_min.rename(columns = renamer, inplace=True)
+    weather_day_min.reset_index(inplace=True)
     
-    date_series = pd.Series(df_min_day['date'])
-    date_series = date_series.map(lambda x: parse(x))
-    day_year = date_series.dt.dayofyear
-    day_year = pd.DataFrame(day_year)
-    day_year.rename(columns = {'date':'d_y'}, inplace = True)
-    df_min_day = pd.concat([day_year, df_min_day], axis = 1)
+    # do the same for just the middle period of the day, but add more column name parts 
+    # average weather features over day and then make day as index
+    weather_mid_ave = weather_mid.groupby('date')[wcols_to_agg].mean()
+    renamer = {col :col + '_mean_mid' for col in wcols_to_agg}
+    weather_mid_ave.rename(columns = renamer, inplace=True)
+    weather_mid_ave.reset_index(inplace=True)
     
-    return df_min_day
+    # max over a day
+    weather_mid_max = weather_mid.groupby('date')[wcols_to_agg].max()
+    renamer = {col :col + '_max_mid' for col in wcols_to_agg}
+    weather_mid_max.rename(columns = renamer, inplace=True)
+    weather_mid_max.reset_index(inplace=True)
 
-def month_of_year(df_min_day):
-    pdb.set_trace()
-    date_series = pd.Series(df_min_day['date'])
-    date_series = date_series.map(lambda x: parse(x))
-    month_year = date_series.dt.month
-    month_year = pd.DataFrame(month_year)
-    month_year.rename(columns = {'date':'m_y'}, inplace = True)
-    df_min_day = pd.concat([month_year, df_min_day], axis = 1)
+    # min over a day
+    weather_mid_min = weather_mid.groupby('date')[wcols_to_agg].min()
+    renamer = {col :col + '_min_mid' for col in wcols_to_agg}
+    weather_mid_min.rename(columns = renamer, inplace=True)
+    weather_mid_min.reset_index(inplace=True)
 
-    return df_min_day
+    # merge everything on "date":
+    weather_all = [weather_day_ave,weather_day_max,weather_day_min,weather_mid_ave,weather_mid_max,weather_mid_min]
+    # final_weather = weather_day_ave.merge(weather_day_max).merge(weather_day_min).merge(weather_mid_ave).merge(weather_mid_max).merge(weather_mid_min)
+    
+    final_weather = reduce(lambda  left,right: pd.merge(left,right,on=['date'], how='outer'), weather_all)
+    # maybe now merge with something else like the target label
+    
+    return final_weather
 
 
-def doy(df_min_day):
- 
-    K=2
-    N = int((275 * M) / 9.0) - K * int((M + 9) / 12.0) + D - 30
-    return N
+# def day_of_year(df_min_day):
+    
+#     date_series = pd.Series(df_min_day['date'])
+#     date_series = date_series.map(lambda x: parse(x))
+#     day_year = date_series.dt.dayofyear
+#     day_year = pd.DataFrame(day_year)
+#     day_year.rename(columns = {'date':'d_y'}, inplace = True)
+#     df_min_day = pd.concat([day_year, df_min_day], axis = 1)
+#     df_min_day['sin_time'] = np.sin(df[time_column].map(datetime.datetime.timestamp)*2*np.pi/seconds_per_day)
+#     df_min_day['cos_time'] = np.cos(df[time_column].map(datetime.datetime.timestamp)*2*np.pi/seconds_per_day)
 
-def year_month_day(Y,N):
-   
-    if is_leap_year(Y):
-        K = 1
-    else:
-        K = 2
-    M = int((9 * (K + N)) / 275.0 + 0.98)
-    if N < 32:
-        M = 1
-    D = N - int((275 * M) / 9.0) + K * int((M + 9) / 12.0) + 30
-    return Y, M, D
+#     return df_min_day
+
+
+
 
 def statistical_labeling(df):
     
-    pv_max = df.groupby(["time",'week_day'])["pv_all"].sum()
+    
+    df['date'] = df.time.dt.strftime('%y-%m-%d')
+    df.drop(columns=['time','day_flag'], inplace=True)
+    pv_max = df.groupby(["date"])["pv_all"].max()
+    pv_min = df.groupby(["date"])["pv_all"].min()
+    maximum_pv=pd.DataFrame(pv_max)
+    maximum_pv.rename(columns={'pv_all':'maximum_daily'},inplace = True)
+    maximum_pv.reset_index(inplace=True)
+    minimum_pv=pd.DataFrame(pv_min)
+    minimum_pv.rename(columns={'pv_all':'minimum_daily'},inplace = True)
+    minimum_pv.reset_index(inplace=True)
+    final_df = df.merge(minimum_pv).merge(maximum_pv)
+    import pdb;pdb.set_trace()
+    final_df['pv_labeled'] = np.where(final_df['pv_all']>=final_df['maximum_daily'], '1', '0')
     print("Max pv %: ", df['pv_all'].max())
     print("Min pv %: ", df['pv_all'].min())
     # plt.title("Distribution in solar %")
@@ -128,7 +144,7 @@ def statistical_labeling(df):
     # plt.savefig('testplot.png')
 
     #labeling by hand
-    df['pv_labeled'] = np.where(df['pv_all']>=4000, '1', '0')
+    # this doesn't work quite as we want because it labels every 5 min chunk differently, even on the same day
 
     return df
 

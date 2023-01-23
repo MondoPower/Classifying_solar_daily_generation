@@ -19,12 +19,10 @@ daterange = {"start_date": '2022-08-19T00:00:00Z', "end_date": '2022-10-19T00:00
 #df.to_csv('full_data.csv')
 df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
-df_high_low = manipulating_data.statistical_labeling(df)
 weather = pd.read_csv('solcast.csv')
+final_weather = manipulating_data.manipulate_weather_data(weather)
+df_high_low = manipulating_data.statistical_labeling(df)
 
-df_min_day = manipulating_data.manipulate_weather_data(weather,df_high_low)
-df_min_day = manipulating_data.day_of_year(df_min_day)
-df_min_day = manipulating_data.month_of_year(df_min_day)
 predictions = model_generation.LogisticRegression_model(merged_df)
 
 manipulating_data.plot_models(merged_df)
