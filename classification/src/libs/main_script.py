@@ -21,7 +21,9 @@ df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
 weather = pd.read_csv('solcast.csv')
 final_weather = manipulating_data.manipulate_weather_data(weather)
-df_high_low = manipulating_data.statistical_labeling(df)
+final = manipulating_data.statistical_labeling(df)
+merged_df = manipulating_data.merged_data(final_weather,final)
+
 
 predictions = model_generation.LogisticRegression_model(merged_df)
 

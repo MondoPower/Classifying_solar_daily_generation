@@ -20,19 +20,22 @@ import plotly.graph_objs as go
 from dateutil.parser import parse
 from functools import reduce
 
+#
 def manipulate_data(df):
-
+    # import pdb; pdb.set_trace()
     df['time'] = pd.to_datetime(df.time)
-    PV_filter_control = [col for col in df.columns if "pv" in col]
+    df['dates'] = pd.to_datetime(df.dates)
+
+    PV_filter_control = [col for col in df.columns if "pv" in col and "_nc" not in col]
     df.dropna(subset=PV_filter_control, inplace=True)
     df.fillna(0, inplace=True)
     df["pv_all"] = df[PV_filter_control].sum(axis=1)
     df = manipulation.generate_day_of_week(df, 'time', inplace=False)
     df=manipulation.flag_daytime(df, utc_col = "time", city = 'Melbourne', inplace = True)
-    cols_to_use = ['time'] + ['pv_all'] + ['week_day'] + ['day_flag']
+    cols_to_use = ['dates'] + ['pv_all'] + ['week_day'] + ['day_flag']
     df = df[cols_to_use]
 
-    return    df 
+    return df 
 
 def manipulate_weather_data(weather):
     
@@ -51,12 +54,6 @@ def manipulate_weather_data(weather):
     
     idx = np.where((weather['hour']<=1) | (weather['hour']>=11))
     weather_mid = weather.loc[idx]
-    
-    # merged_df = df.merge(weather,on='time')
-    # merged_df.drop(columns=['pv_all'], inplace=True)
-    # merged_df.drop_duplicates(inplace=True)
-    # merged_df = merged_df.fillna(0.0)
-    # merged_df['date'] = merged_df.time.dt.strftime('%y-%m-%d')
     
     # average weather features over day and then make day as index
     weather_day_ave = weather.groupby('date')[wcols_to_agg + ['month', 'hour', 'doy', 'sin_doy', 'cos_doy']].mean()
@@ -104,49 +101,77 @@ def manipulate_weather_data(weather):
     
     return final_weather
 
+def get_hour(row):
+    return row.hour
 
-# def day_of_year(df_min_day):
-    
-#     date_series = pd.Series(df_min_day['date'])
-#     date_series = date_series.map(lambda x: parse(x))
-#     day_year = date_series.dt.dayofyear
-#     day_year = pd.DataFrame(day_year)
-#     day_year.rename(columns = {'date':'d_y'}, inplace = True)
-#     df_min_day = pd.concat([day_year, df_min_day], axis = 1)
-#     df_min_day['sin_time'] = np.sin(df[time_column].map(datetime.datetime.timestamp)*2*np.pi/seconds_per_day)
-#     df_min_day['cos_time'] = np.cos(df[time_column].map(datetime.datetime.timestamp)*2*np.pi/seconds_per_day)
-
-#     return df_min_day
-
-
-
+def get_date(row):
+    return row.strftime('%y-%m-%d')
 
 def statistical_labeling(df):
     
+    df['hour'] = df.dates.apply(get_hour)
+    df['date'] = df.dates.apply(get_date)
+    # df.drop(columns=['dates','day_flag'], inplace=True)
+    # average over peack hours
+    #convert 
+    idx = (df['hour']<=13) & (df['hour']>=11)
+    df_mid = df[idx].copy()
+    df_mid_ave = df_mid.groupby('date')['pv_all'].mean()
+    df_mid_ave=pd.DataFrame(df_mid_ave)
+    #if maximum daily greater than mid time average 
+    df_mid_ave.rename(columns = {'pv_all':'mean_mid_day'}, inplace=True)
+    df_mid_ave.reset_index(inplace=True)
     
-    df['date'] = df.time.dt.strftime('%y-%m-%d')
-    df.drop(columns=['time','day_flag'], inplace=True)
-    pv_max = df.groupby(["date"])["pv_all"].max()
-    pv_min = df.groupby(["date"])["pv_all"].min()
-    maximum_pv=pd.DataFrame(pv_max)
-    maximum_pv.rename(columns={'pv_all':'maximum_daily'},inplace = True)
-    maximum_pv.reset_index(inplace=True)
-    minimum_pv=pd.DataFrame(pv_min)
-    minimum_pv.rename(columns={'pv_all':'minimum_daily'},inplace = True)
-    minimum_pv.reset_index(inplace=True)
-    final_df = df.merge(minimum_pv).merge(maximum_pv)
+    pv_max = df["pv_all"].max()
+    fraction = pv_max*0.5
+    df_mid_ave['pv_labeled'] = np.where(df_mid_ave['mean_mid_day']>=fraction , '1', '0')
+
+    df = df.merge(df_mid_ave[['date','pv_labeled']], on = 'date')
     import pdb;pdb.set_trace()
-    final_df['pv_labeled'] = np.where(final_df['pv_all']>=final_df['maximum_daily'], '1', '0')
-    print("Max pv %: ", df['pv_all'].max())
-    print("Min pv %: ", df['pv_all'].min())
+    # maximum = final.groupby(["date"])["mean_mid_day"].max()
+
+    # maxi_mid_day =pd.DataFrame(maximum)
+    # #if maximum daily greater than mid time average 
+    # maxi_mid_day.reset_index(inplace=True)
+    
+    # pv_min = df.groupby(["date"])["pv_all"].min()
+    # maximum_pv=pd.DataFrame(pv_max)
+    # maximum_pv.rename(columns={'pv_all':'maximum_daily'},inplace = True)
+    # maximum_pv.reset_index(inplace=True)
+    # minimum_pv=pd.DataFrame(pv_min)
+    # minimum_pv.rename(columns={'pv_all':'minimum_daily'},inplace = True)
+    # minimum_pv.reset_index(inplace=True)
+    # mean_max = np.mean(maximum_pv['maximum_daily'], axis=0)
+    # mean_min = np.mean(minimum_pv['minimum_daily'], axis=0)
+
+    # final_df = minimum_pv.merge(maximum_pv).merge(df_max_mid)
+    
+    # maxi_mid_day['mean_mid_day'].plot(kind='barh')
     # plt.title("Distribution in solar %")
-    # df['pv_all'].hist()
-    # plt.savefig('testplot.png')
+    # maxi_mid_day['mean_mid_day'].hist()
+    # plt.savefig('new.png')
 
     #labeling by hand
     # this doesn't work quite as we want because it labels every 5 min chunk differently, even on the same day
 
-    return df
+    return final
+
+def merged_data(final_weather,final):
+  
+    final.drop(columns=['mean_mid_day','pv_all','week_day','hour'],inplace=True)
+
+    features_all = final_weather.merge(final)
+
+    dfCorr = features_all.corr().abs()
+    to_keep = [c for c in dfCorr.columns if dfCorr[c] > 0.9]
+    
+    plt.figure(figsize=(30,10))
+    sn.heatmap(filteredDf, annot=True, cmap="Reds")
+    plt.show()
+    print(features_all.corr())
+
+    return merged_df
+
 
 def plot_models(merged_df):
 
@@ -161,3 +186,11 @@ def plot_models(merged_df):
 
     return 
 
+def make_eyeball_trace(df):
+
+
+    fig = go.Figure()
+  
+    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_all'],mode='lines', name='PV', line=dict(color='red')))
+    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_labeled'].astype(float).values * 5000, mode='lines', name='Label', line=dict(color='blue',dash='dash')))
+    fig.show()
