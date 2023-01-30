@@ -10,22 +10,22 @@ import manipulating_data
 import plotly.graph_objs as go
 import model_generation
 
-
-
 location_id = '0780ec0b-56fa-4242-88ae-0355069045bf'
+# location_id = '373f76de-57ac-4618-9d56-f422d6f8b2d7'
 daterange = {"start_date": '2022-08-19T00:00:00Z', "end_date": '2022-10-19T00:00:00Z'}
 # start_date,end_date = data_gathering.get_date_range(daterange)
 # df, location_config = data_gathering.get_location_full(location_id)
-#df.to_csv('full_data.csv')
+# df.to_csv('full_data.csv')
+
 df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
 weather = pd.read_csv('solcast.csv')
 final_weather = manipulating_data.manipulate_weather_data(weather)
-final = manipulating_data.statistical_labeling(df)
-merged_df = manipulating_data.merged_data(final_weather,final)
-
-
-predictions = model_generation.LogisticRegression_model(merged_df)
+df = manipulating_data.statistical_labeling(df)
+features_all = manipulating_data.merged_data(final_weather,df)
+data_normalized, target = model_generation.scaling_data(features_all)
+x_train, y_train,x_test,y_test = model_generation.test_train_split(data_normalized, target, test_frac=0.15)
+predictions = model_generation.LogisticRegression_model(x_train, y_train,x_test,y_test)
 
 manipulating_data.plot_models(merged_df)
 

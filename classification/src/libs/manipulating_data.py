@@ -20,9 +20,8 @@ import plotly.graph_objs as go
 from dateutil.parser import parse
 from functools import reduce
 
-#
 def manipulate_data(df):
-    # import pdb; pdb.set_trace()
+   
     df['time'] = pd.to_datetime(df.time)
     df['dates'] = pd.to_datetime(df.dates)
 
@@ -111,41 +110,53 @@ def statistical_labeling(df):
     
     df['hour'] = df.dates.apply(get_hour)
     df['date'] = df.dates.apply(get_date)
-    # df.drop(columns=['dates','day_flag'], inplace=True)
-    # average over peack hours
-    #convert 
-    idx = (df['hour']<=13) & (df['hour']>=11)
+   
+    idx = (df['hour']<=16) & (df['hour']>=11)
     df_mid = df[idx].copy()
     df_mid_ave = df_mid.groupby('date')['pv_all'].mean()
     df_mid_ave=pd.DataFrame(df_mid_ave)
-    #if maximum daily greater than mid time average 
+   
     df_mid_ave.rename(columns = {'pv_all':'mean_mid_day'}, inplace=True)
     df_mid_ave.reset_index(inplace=True)
     
     pv_max = df["pv_all"].max()
-    fraction = pv_max*0.5
+    fraction = pv_max*0.3
     df_mid_ave['pv_labeled'] = np.where(df_mid_ave['mean_mid_day']>=fraction , '1', '0')
-
-    df = df.merge(df_mid_ave[['date','pv_labeled']], on = 'date')
-    import pdb;pdb.set_trace()
-    # maximum = final.groupby(["date"])["mean_mid_day"].max()
-
-    # maxi_mid_day =pd.DataFrame(maximum)
-    # #if maximum daily greater than mid time average 
-    # maxi_mid_day.reset_index(inplace=True)
     
-    # pv_min = df.groupby(["date"])["pv_all"].min()
-    # maximum_pv=pd.DataFrame(pv_max)
-    # maximum_pv.rename(columns={'pv_all':'maximum_daily'},inplace = True)
-    # maximum_pv.reset_index(inplace=True)
-    # minimum_pv=pd.DataFrame(pv_min)
-    # minimum_pv.rename(columns={'pv_all':'minimum_daily'},inplace = True)
-    # minimum_pv.reset_index(inplace=True)
-    # mean_max = np.mean(maximum_pv['maximum_daily'], axis=0)
-    # mean_min = np.mean(minimum_pv['minimum_daily'], axis=0)
+    df = df.merge(df_mid_ave, on = 'date')
+  
+    return df
 
-    # final_df = minimum_pv.merge(maximum_pv).merge(df_max_mid)
+def merged_data(final_weather,df):
+   
+    df.drop(columns=['hour','week_day','day_flag'],inplace=True)
+    final_weather.drop(columns=['doy','hour','month'],inplace=True)
+    features_all = final_weather.merge(df,on = ['date'])
     
+    # features_all['pv_labeled']=features_all['pv_labeled'].astype(float).values*1
+  
+    # features_all[ 'dhi_min'].corr(features_all['pv_labeled'])
+    # #air_tem_mean
+
+    # to_keep = [c for c in dfCorr.columns if dfCorr[c] > 0.9]
+    
+    # plt.figure(figsize=(30,10))
+    # sns.heatmap(filteredDf, annot=True, cmap="Reds")
+    # plt.show()
+    # print(features_all.corr())
+
+    return features_all
+
+def make_eyeball_trace(df):
+
+
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_all'],mode='lines', name='PV', line=dict(color='red')))
+    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_labeled'].astype(float).values * 4000, mode='lines', name='Label', line=dict(color='blue',dash='dash')))
+    fig.update_yaxes(title_text='new location 11-1and 0.5Max')
+    fig.show()
+
     # maxi_mid_day['mean_mid_day'].plot(kind='barh')
     # plt.title("Distribution in solar %")
     # maxi_mid_day['mean_mid_day'].hist()
@@ -153,44 +164,3 @@ def statistical_labeling(df):
 
     #labeling by hand
     # this doesn't work quite as we want because it labels every 5 min chunk differently, even on the same day
-
-    return final
-
-def merged_data(final_weather,final):
-  
-    final.drop(columns=['mean_mid_day','pv_all','week_day','hour'],inplace=True)
-
-    features_all = final_weather.merge(final)
-
-    dfCorr = features_all.corr().abs()
-    to_keep = [c for c in dfCorr.columns if dfCorr[c] > 0.9]
-    
-    plt.figure(figsize=(30,10))
-    sn.heatmap(filteredDf, annot=True, cmap="Reds")
-    plt.show()
-    print(features_all.corr())
-
-    return merged_df
-
-
-def plot_models(merged_df):
-
-    
-    fig = go.Figure()
-  
-    fig.add_trace(go.Scattergl(x=merged_df['time'], y=merged_df['pv_all'],mode='lines', name='label max', line=dict(color='purple', dash='dash')))
-    fig.add_trace(go.Scattergl(x=merged_df['time'], y=merged_df[merged_df['pv_labeled']==1], mode='lines', name='label_min', line=dict(color='blue',dash='dash')))
-    fig.update_xaxes(title_text=f"{location} UTC")
-    fig.update_yaxes(title_text=tcol)
-    fig.show()
-
-    return 
-
-def make_eyeball_trace(df):
-
-
-    fig = go.Figure()
-  
-    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_all'],mode='lines', name='PV', line=dict(color='red')))
-    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_labeled'].astype(float).values * 5000, mode='lines', name='Label', line=dict(color='blue',dash='dash')))
-    fig.show()
