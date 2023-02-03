@@ -19,6 +19,7 @@ import numpy as np
 import plotly.graph_objs as go
 from dateutil.parser import parse
 from functools import reduce
+from sklearn.model_selection import GridSearchCV
 
 def manipulate_data(df):
    
@@ -128,24 +129,28 @@ def statistical_labeling(df):
     return df
 
 def merged_data(final_weather,df):
-   
-    df.drop(columns=['hour','week_day','day_flag'],inplace=True)
+    
+    df.drop(columns=['hour','week_day','day_flag','mean_mid_day'],inplace=True)
     final_weather.drop(columns=['doy','hour','month'],inplace=True)
-    features_all = final_weather.merge(df,on = ['date'])
-    
-    # features_all['pv_labeled']=features_all['pv_labeled'].astype(float).values*1
-  
-    # features_all[ 'dhi_min'].corr(features_all['pv_labeled'])
-    # #air_tem_mean
+    features_all = final_weather.merge(df,on = ['date'])    
+    features_all['labeled_target']=features_all.pv_labeled.astype(float)
+    features_all['labeled_target'].value_counts()/features_all.shape[0]
 
-    # to_keep = [c for c in dfCorr.columns if dfCorr[c] > 0.9]
+    #correlation features
+    correlate = features_all.corr()
+    correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]
+
+    cols_to_use=['labeled_target','dni90_mean','dni_mean' ,'dni_max','dni90_max_mid','dni_max_mid' ,'dni90_max' ,'dni10_max',
+    'dni10_mean' ,'ebh_max_mid' ,'dni10_max_mid','ebh_mean' ,'ebh_max' ,'pv_all','dni_mean_mid','dhi_max','dhi_max_mid',
+    'dhi_mean_mid','dhi_mean','cloud_opacity_max_mid','cloud_opacity_max','cloud_opacity_mean','cloud_opacity_mean_mid',
+    'cos_doy','cloud_opacity_min_mid','cloud_opacity_min','dni10_min_mid','dni90_mean_mid','ghi_max_mid','sin_doy','ghi10_max_mid','dni10_mean_mid']
     
-    # plt.figure(figsize=(30,10))
-    # sns.heatmap(filteredDf, annot=True, cmap="Reds")
-    # plt.show()
-    # print(features_all.corr())
+    features_all =features_all[cols_to_use]
+   
 
     return features_all
+
+
 
 def make_eyeball_trace(df):
 
