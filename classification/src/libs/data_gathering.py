@@ -33,8 +33,6 @@ def get_location_full(location_id):
     location_config, config = influxETL.get_config(
         location_id, return_raw=True)
 
-    # get data for the above config from the influx database clone. This requires VPN connection
-    # have to loop this over weeks to make it work
     start_date, end_date = get_date_range(daterange)
     #start_date = '2022-08-19T00:00:00Z'
     loc_data = influxETL.get_location_influx_data_historical(

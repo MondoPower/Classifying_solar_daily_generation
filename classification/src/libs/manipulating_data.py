@@ -72,8 +72,6 @@ def manipulate_weather_data(weather):
     renamer = {col :col + '_min' for col in wcols_to_agg}
     weather_day_min.rename(columns = renamer, inplace=True)
     weather_day_min.reset_index(inplace=True)
-    
-    # do the same for just the middle period of the day, but add more column name parts 
     # average weather features over day and then make day as index
     weather_mid_ave = weather_mid.groupby('date')[wcols_to_agg].mean()
     renamer = {col :col + '_mean_mid' for col in wcols_to_agg}
@@ -125,47 +123,47 @@ def statistical_labeling(df):
     df_mid_ave['pv_labeled'] = np.where(df_mid_ave['mean_mid_day']>=fraction , '1', '0')
     
     df = df.merge(df_mid_ave, on = 'date')
-  
+    df.drop(columns=['pv_all','day_flag','hour','mean_mid_day','week_day'],inplace=True)
+    
     return df
 
-def merged_data(final_weather,df):
+def merged_data(final_df,df):
     
-    df.drop(columns=['hour','week_day','day_flag','mean_mid_day'],inplace=True)
-    final_weather.drop(columns=['doy','hour','month'],inplace=True)
-    features_all = final_weather.merge(df,on = ['date'])    
+    df.rename(columns={'dates':'time'},inplace=True)
+    df.drop(columns=['date'],inplace=True)
+    final_df['time'] = pd.to_datetime(final_df.time, utc=True)
+    features_all = final_df.merge(df,on = ['time'])    
     features_all['labeled_target']=features_all.pv_labeled.astype(float)
-    features_all['labeled_target'].value_counts()/features_all.shape[0]
+    features_all.drop(columns=['pv_labeled'],inplace=True)
 
     #correlation features
-    correlate = features_all.corr()
-    correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]
+    # correlate = features_all.corr()
+    # correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]
 
-    cols_to_use=['labeled_target','dni90_mean','dni_mean' ,'dni_max','dni90_max_mid','dni_max_mid' ,'dni90_max' ,'dni10_max',
-    'dni10_mean' ,'ebh_max_mid' ,'dni10_max_mid','ebh_mean' ,'ebh_max' ,'pv_all','dni_mean_mid','dhi_max','dhi_max_mid',
-    'dhi_mean_mid','dhi_mean','cloud_opacity_max_mid','cloud_opacity_max','cloud_opacity_mean','cloud_opacity_mean_mid',
-    'cos_doy','cloud_opacity_min_mid','cloud_opacity_min','dni10_min_mid','dni90_mean_mid','ghi_max_mid','sin_doy','ghi10_max_mid','dni10_mean_mid']
+
+    # cols_to_use=['labeled_target','dni90_mean','dni_mean' ,'dni_max','dni90_max_mid','dni_max_mid' ,'dni90_max' ,'dni10_max',
+    # 'dni10_mean' ,'ebh_max_mid' ,'dni10_max_mid','ebh_mean' ,'ebh_max' ,'pv_all','dni_mean_mid','dhi_max','dhi_max_mid',
+    # 'dhi_mean_mid','dhi_mean','cloud_opacity_max_mid','cloud_opacity_max','cloud_opacity_mean','cloud_opacity_mean_mid',
+    # 'cos_doy','cloud_opacity_min_mid','cloud_opacity_min','dni10_min_mid','dni90_mean_mid','ghi_max_mid','sin_doy','ghi10_max_mid','dni10_mean_mid']
     
-    features_all =features_all[cols_to_use]
+    #features_all =features_all[cols_to_use]
    
 
     return features_all
 
 
-
 def make_eyeball_trace(df):
 
-
     fig = go.Figure()
-    
     fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_all'],mode='lines', name='PV', line=dict(color='red')))
     fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_labeled'].astype(float).values * 4000, mode='lines', name='Label', line=dict(color='blue',dash='dash')))
     fig.update_yaxes(title_text='new location 11-1and 0.5Max')
     fig.show()
 
+
+ 
+
     # maxi_mid_day['mean_mid_day'].plot(kind='barh')
     # plt.title("Distribution in solar %")
     # maxi_mid_day['mean_mid_day'].hist()
     # plt.savefig('new.png')
-
-    #labeling by hand
-    # this doesn't work quite as we want because it labels every 5 min chunk differently, even on the same day
