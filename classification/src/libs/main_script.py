@@ -21,21 +21,24 @@ start_date= '2022-08-19T00:00:00Z'
 df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
 df = manipulating_data.statistical_labeling(df)
-df['dates'] = pd.to_datetime(df.dates, utc=True)
 
 # final_df=pd.DataFrame()
 
 # for day in df.date.unique():
     
 #     day = '20'+ day + 'T07:00:00Z'
+ 
 #     df_dayily= gather_weather_data.get_weather_data_from_timestream(start_date=day, horizon_hours = 16)
 #     final_df=pd.concat([final_df,df_dayily],ignore_index=True)
-# final_df.to_csv('final_df.csv')
-final_df = pd.read_csv('final_df.csv')
-features_all = manipulating_data.merged_data(final_df,df)
-import pdb;pdb.set_trace()
+# final_df.to_csv('final.csv')
+
+final_df = pd.read_csv('final.csv')
+
+manipulated_weather = gather_weather_data.manipulate_weather_data(final_df)
+features_all = manipulating_data.merged_data(manipulated_weather,df)
 data_normalized, target = model_generation.scaling_data(features_all)
 x_train, y_train,x_test,y_test = model_generation.test_train_split(data_normalized, target, test_frac=0.15)
+
 predictions = model_generation.LogisticRegression_model(x_train, y_train,x_test,y_test)
 
   

@@ -22,9 +22,10 @@ from sklearn.model_selection import KFold
 
 
 def scaling_data(features_all):
-   
+       
     data = features_all.copy()
-    data.drop(columns=['labeled_target','time'],inplace=True)
+    data.drop(columns=['labeled_target','date'],inplace=True)
+    
     target = features_all['labeled_target']
     scaler = StandardScaler()
     scaler.fit(data)
@@ -46,11 +47,12 @@ def test_train_split(data_normalized, target,test_frac=0.15):
 
 
 def LogisticRegression_model(x_train, y_train,x_test,y_test):
-    
+   
     elastic_net_classifier =  LogisticRegressionCV(class_weight='balanced',cv=4, penalty='elasticnet', l1_ratios=[0.1, 0.5, 0.9],solver='saga')
     elastic_net_classifier.fit(x_train,y_train)
     y_predictions = elastic_net_classifier.predict(x_test)
     print(classification_report(y_test, y_predictions))
+    import pdb;pdb.set_trace()
 
     # coef = elastic_net_classifier.coef_
     # intercept = elastic_net_classifier.intercept_

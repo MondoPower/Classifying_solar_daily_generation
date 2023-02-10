@@ -121,30 +121,29 @@ def statistical_labeling(df):
     pv_max = df["pv_all"].max()
     fraction = pv_max*0.3
     df_mid_ave['pv_labeled'] = np.where(df_mid_ave['mean_mid_day']>=fraction , '1', '0')
-    
-    df = df.merge(df_mid_ave, on = 'date')
-    df.drop(columns=['pv_all','day_flag','hour','mean_mid_day','week_day'],inplace=True)
+    df = df_mid_ave.copy()
+    # df = df.merge(df_mid_ave, on = 'date')
+    # df.drop(columns=['pv_all','day_flag','hour','mean_mid_day','week_day'],inplace=True)
     
     return df
 
-def merged_data(final_df,df):
-    
-    df.rename(columns={'dates':'time'},inplace=True)
-    df.drop(columns=['date'],inplace=True)
-    final_df['time'] = pd.to_datetime(final_df.time, utc=True)
-    features_all = final_df.merge(df,on = ['time'])    
+def merged_data(manipulated_weather,df):
+   
+    df.drop(columns=['mean_mid_day'],inplace=True)
+    #final_df['time'] = pd.to_datetime(manipulated_weather.time, utc=True)
+    features_all = manipulated_weather.merge(df,on = ['date'])    
     features_all['labeled_target']=features_all.pv_labeled.astype(float)
-    features_all.drop(columns=['pv_labeled'],inplace=True)
-
+    features_all.drop(columns=['pv_labeled', 'month', 'hour', 'doy'],inplace=True)
+   
     #correlation features
     # correlate = features_all.corr()
     # correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]
-
-
-    # cols_to_use=['labeled_target','dni90_mean','dni_mean' ,'dni_max','dni90_max_mid','dni_max_mid' ,'dni90_max' ,'dni10_max',
-    # 'dni10_mean' ,'ebh_max_mid' ,'dni10_max_mid','ebh_mean' ,'ebh_max' ,'pv_all','dni_mean_mid','dhi_max','dhi_max_mid',
-    # 'dhi_mean_mid','dhi_mean','cloud_opacity_max_mid','cloud_opacity_max','cloud_opacity_mean','cloud_opacity_mean_mid',
-    # 'cos_doy','cloud_opacity_min_mid','cloud_opacity_min','dni10_min_mid','dni90_mean_mid','ghi_max_mid','sin_doy','ghi10_max_mid','dni10_mean_mid']
+     
+    cols_to_use=['date','labeled_target','dni10_max_mid','dni_max' ,'dni10_mean_mid','dni10_mean','dni10_max' ,'dni_mean' ,'dni_max_mid',
+    'ebh_max' ,'ghi_mean' ,'dni90_mean_mid','cloudOpacity_min_mid' ,'ghi_max' ,'ghi_mean_mid','ghi90_mean','cloudOpacity_min','cloudOpacity_mean_mid',
+    'cos_doy','ghi90_max_mid','ghi90_max','ghi90_mean_mid','cloudOpacity_mean','dhi_max_mid',
+    'dhi_max','dhi_mean','dhi_mean_mid']
+    
     
     #features_all =features_all[cols_to_use]
    

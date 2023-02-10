@@ -1,6 +1,7 @@
 import etl.influx_etl as influx_etl
 from etl import util
 import pandas as pd
+import functools
 import pytz
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -47,7 +48,7 @@ def adjust_start_time(start_date):
     return ts_start_date, ts_end_date
     
 def get_weather_data_from_timestream(start_date, horizon_hours = 24):
-   
+    
     horizon = (np.arange(12*horizon_hours, dtype=int)*5 + 10).tolist()
     ts_start_date, ts_end_date = adjust_start_time(start_date)
     df = timestream_etl.query_solcast_historical(ts_start_date, ts_end_date, None, verbose=True)
@@ -84,5 +85,69 @@ def test_train_split(data_normalized, test_frac=0.15):
     y_test = target.loc[split_loc:]
     
     return x_train, y_train,x_test,y_test
+
+def manipulate_weather_data(final_df):
+    
+    final_df['time'] = pd.to_datetime(final_df.time, utc=True)
+    final_df['date'] = final_df.time.dt.strftime('%y-%m-%d')
+    final_df['hour'] = final_df.time.dt.hour
+    final_df['month'] = final_df.time.dt.month
+    final_df['doy'] = final_df.time.dt.dayofyear
+    final_df['sin_doy'] = np.sin(2*np.pi*final_df.doy/365.0)
+    final_df['cos_doy'] = np.cos(2*np.pi*final_df.doy/365.0)
+
+    final_df.drop(columns=['Unnamed: 0','azimuth','zenith'], inplace=True)
+    wcols_to_agg = ['air_temp', 'cloudOpacity', 'dhi', 'dni', 'dni10', 'dni90', 'ebh', 'ghi', 'ghi10', 'ghi90']
+
+    # get just the points that happen 11-1?
+    
+    idx = np.where((final_df['hour']<=1) | (final_df['hour']>=11))
+    weather_mid = final_df.loc[idx]
+    
+    # average weather features over day and then make day as index
+    weather_day_ave = final_df.groupby('date')[wcols_to_agg + ['month', 'hour', 'doy', 'sin_doy', 'cos_doy']].mean()
+    renamer = {col :col + '_mean' for col in wcols_to_agg}
+    weather_day_ave.rename(columns = renamer, inplace=True)
+    weather_day_ave.reset_index(inplace=True)
+    
+    # max over a day
+    weather_day_max = final_df.groupby('date')[wcols_to_agg].max()
+    renamer = {col :col + '_max' for col in wcols_to_agg}
+    weather_day_max.rename(columns = renamer, inplace=True)
+    weather_day_max.reset_index(inplace=True)
+
+    # min over a day
+    weather_day_min = final_df.groupby('date')[wcols_to_agg].min()
+    renamer = {col :col + '_min' for col in wcols_to_agg}
+    weather_day_min.rename(columns = renamer, inplace=True)
+    weather_day_min.reset_index(inplace=True)
+    # average weather features over day and then make day as index
+    weather_mid_ave = weather_mid.groupby('date')[wcols_to_agg].mean()
+    renamer = {col :col + '_mean_mid' for col in wcols_to_agg}
+    weather_mid_ave.rename(columns = renamer, inplace=True)
+    weather_mid_ave.reset_index(inplace=True)
+    
+    # max over a day
+    weather_mid_max = weather_mid.groupby('date')[wcols_to_agg].max()
+    renamer = {col :col + '_max_mid' for col in wcols_to_agg}
+    weather_mid_max.rename(columns = renamer, inplace=True)
+    weather_mid_max.reset_index(inplace=True)
+
+    # min over a day
+    weather_mid_min = weather_mid.groupby('date')[wcols_to_agg].min()
+    renamer = {col :col + '_min_mid' for col in wcols_to_agg}
+    weather_mid_min.rename(columns = renamer, inplace=True)
+    weather_mid_min.reset_index(inplace=True)
+
+    # merge everything on "date":
+    weather_all = [weather_day_ave,weather_day_max,weather_day_min,weather_mid_ave,weather_mid_max,weather_mid_min]
+    # final_weather = weather_day_ave.merge(weather_day_max).merge(weather_day_min).merge(weather_mid_ave).merge(weather_mid_max).merge(weather_mid_min)
+    
+    final_weather = functools.reduce(lambda  left,right: pd.merge(left,right,on=['date'], how='outer'), weather_all)
+    # maybe now merge with something else like the target label
+    
+    return final_weather
+
+
 
     
