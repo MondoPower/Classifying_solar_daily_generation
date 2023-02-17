@@ -48,7 +48,7 @@ def adjust_start_time(start_date):
     return ts_start_date, ts_end_date
     
 def get_weather_data_from_timestream(start_date, horizon_hours = 24):
-    
+  
     horizon = (np.arange(12*horizon_hours, dtype=int)*5 + 10).tolist()
     ts_start_date, ts_end_date = adjust_start_time(start_date)
     df = timestream_etl.query_solcast_historical(ts_start_date, ts_end_date, None, verbose=True)
@@ -61,19 +61,6 @@ def get_weather_data_from_timestream(start_date, horizon_hours = 24):
     df_formatted.rename(columns={'Day sin':'Day_sin','Day cos':'Day_cos'},inplace=True)
     return df_formatted
 
-def scaling_data(df_formatted):
-    import pdb;pdb.set_trace()
-    data = df_formatted.copy()
-    data.drop(columns=['time'],inplace=True)
-    
-    scaler = StandardScaler()
-    scaler.fit(data)
-    data_normalized = scaler.transform(data)
-    data_normalized = pd.DataFrame(data_normalized, index=data.index, columns=data.columns)
-    
-
-    print(data_normalized.describe().round(2))
-    return data_normalized
 
 def test_train_split(data_normalized, test_frac=0.15):
  

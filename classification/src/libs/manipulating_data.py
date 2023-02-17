@@ -109,7 +109,7 @@ def statistical_labeling(df):
     
     df['hour'] = df.dates.apply(get_hour)
     df['date'] = df.dates.apply(get_date)
-   
+
     idx = (df['hour']<=16) & (df['hour']>=11)
     df_mid = df[idx].copy()
     df_mid_ave = df_mid.groupby('date')['pv_all'].mean()
@@ -122,9 +122,7 @@ def statistical_labeling(df):
     fraction = pv_max*0.3
     df_mid_ave['pv_labeled'] = np.where(df_mid_ave['mean_mid_day']>=fraction , '1', '0')
     df = df_mid_ave.copy()
-    # df = df.merge(df_mid_ave, on = 'date')
-    # df.drop(columns=['pv_all','day_flag','hour','mean_mid_day','week_day'],inplace=True)
-    
+        
     return df
 
 def merged_data(manipulated_weather,df):
@@ -137,30 +135,10 @@ def merged_data(manipulated_weather,df):
    
     #correlation features
     # correlate = features_all.corr()
-    # correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]
-     
-    cols_to_use=['date','labeled_target','dni10_max_mid','dni_max' ,'dni10_mean_mid','dni10_mean','dni10_max' ,'dni_mean' ,'dni_max_mid',
-    'ebh_max' ,'ghi_mean' ,'dni90_mean_mid','cloudOpacity_min_mid' ,'ghi_max' ,'ghi_mean_mid','ghi90_mean','cloudOpacity_min','cloudOpacity_mean_mid',
-    'cos_doy','ghi90_max_mid','ghi90_max','ghi90_mean_mid','cloudOpacity_mean','dhi_max_mid',
-    'dhi_max','dhi_mean','dhi_mean_mid']
-    
-    
-    #features_all =features_all[cols_to_use]
-   
+    # correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]   
 
     return features_all
 
-
-def make_eyeball_trace(df):
-
-    fig = go.Figure()
-    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_all'],mode='lines', name='PV', line=dict(color='red')))
-    fig.add_trace(go.Scattergl(x=df['dates'], y=df['pv_labeled'].astype(float).values * 4000, mode='lines', name='Label', line=dict(color='blue',dash='dash')))
-    fig.update_yaxes(title_text='new location 11-1and 0.5Max')
-    fig.show()
-
-
- 
 
     # maxi_mid_day['mean_mid_day'].plot(kind='barh')
     # plt.title("Distribution in solar %")

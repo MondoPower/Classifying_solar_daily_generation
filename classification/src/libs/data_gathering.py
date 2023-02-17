@@ -25,7 +25,7 @@ def get_date_range(daterange):
     return start_date, end_date
     
 def get_location_full(location_id):
-    daterange = {"start_date": '2022-08-19T00:00:00Z', "end_date": None}
+    daterange = {"start_date": '2022-02-12T00:00:00Z', "end_date": None}
     interval = 5
     influxETL = influx_etl.influx_etl()
 
