@@ -25,7 +25,8 @@ df = pd.read_csv('2022-02_2022-12.csv')
 
 #df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
-df = manipulating_data.statistical_labeling(df)
+df=manipulating_data.new_statistics(df)
+#df = manipulating_data.statistical_labeling(df)
 
 #data = pd.DataFrame()
 
@@ -41,7 +42,7 @@ final = pd.read_csv('final_big.csv')
 
 manipulated_weather = gather_weather_data.manipulate_weather_data(final)
 features_all = manipulating_data.merged_data(manipulated_weather,df)
-data_normalized, target = model_generation.scaling_data(features_all)
+data_normalized, target,features_all = model_generation.scaling_data(features_all)
 X_train, y_train,X_test,y_test,dates = model_generation.test_train_split(features_all,data_normalized, target, test_frac=0.15)
 
 predictions = model_generation.LogisticRegression_model(X_train, y_train,X_test,y_test,dates)

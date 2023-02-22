@@ -13,8 +13,8 @@ secondary = true
 python = "~3.9"
 boto3 = "*"
 pandas = "*"
-mondo-ds-etl = {version = "0.0.40", source = "mondo"}
-mondo-ds-timeseries-tools = {version = "0.0.10", source = "mondo"}
+mondo-ds-etl = {version = "0.0.42", source = "mondo"}
+mondo-ds-timeseries-tools = {version = "0.0.11", source = "mondo"}
 scikit-learn = "*"
 matplotlib = "^3.5.3"
 plotly = "*"
