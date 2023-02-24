@@ -25,7 +25,7 @@ df = pd.read_csv('2022-02_2022-12.csv')
 
 #df = pd.read_csv('full_data.csv')
 df = manipulating_data.manipulate_data(df)
-df=manipulating_data.new_statistics(df)
+df=manipulating_data.manual_statistics(df)
 #df = manipulating_data.statistical_labeling(df)
 
 #data = pd.DataFrame()

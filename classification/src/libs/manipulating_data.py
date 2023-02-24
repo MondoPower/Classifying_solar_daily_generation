@@ -97,6 +97,7 @@ def manipulate_weather_data(weather):
     final_weather = reduce(lambda  left,right: pd.merge(left,right,on=['date'], how='outer'), weather_all)
     # maybe now merge with something else like the target label
     
+    
     return final_weather
 
 def get_hour(row):
@@ -105,12 +106,12 @@ def get_hour(row):
 def get_date(row):
     return row.strftime('%y-%m-%d')
 
-def new_statistics(df):
+def manual_statistics(df):
    
     df['hour'] = df.dates.apply(get_hour)
     df['date'] = df.dates.apply(get_date)
    
-    mask = df[(df['date'] >='22-12-01') & (df['date'] < '23-02-11')]
+    mask = df[(df['date'] >='22-06-01') & (df['date'] < '23-08-30')]
     df=mask.copy()
      
     # real weather data from bom website
@@ -121,38 +122,33 @@ def new_statistics(df):
     july = [13.2,13,12,13.4,14.3,16.4,13.2,11.9,12.2,16,13.9,9.7,13.3,11.8,14,13,14.8,11.9,12.6,13.1,17.1,18.1,18,15.9,11.2,14.9,13.3,12.8,13.1,15.1]
     august = [14,16,18.3,18.1,13.3,14.1,14.3,14.3,13.8,14.3,14.6,14.6,17.9,13.1,15.7,12.8,15,14.7,15.2,14.1,13.7,17,12,12.4,13.5,13.8,18.7,19.5,17.6,11.9,16.4]
     # labeling three months
-    dec = pd.DataFrame(dec)
-    dec.rename(columns={0:'december'},inplace=True)
-    Jan = pd.DataFrame(Jan)
-    Jan.rename(columns={0:'January'},inplace=True)
-    feb = pd.DataFrame(feb)
-    feb.rename(columns={0:'febraury'},inplace=True)
-    summer = pd.concat([dec,Jan,feb],axis=1)
-    summer.fillna(0,inplace=True)
-
-    #df1 = pd.DataFrame(real_weather, columns=['weather_max_tempreture'])
+    june = pd.DataFrame(june)
+    june.rename(columns={0:'june'},inplace=True)
+    july = pd.DataFrame(july)
+    july.rename(columns={0:'july'},inplace=True)
+    august = pd.DataFrame(august)
+    august.rename(columns={0:'august'},inplace=True)
+    winter = pd.concat([june,july,august],axis=1)
+    winter.fillna(0,inplace=True)
     
     df.drop(columns=['week_day','day_flag','hour','dates'],inplace=True)
     df_date = df.groupby('date')['pv_all'].max()
     df_data=pd.DataFrame(df_date)
     df_data = df_data.reset_index()
-    # df_data['weather_max']=real_weather
-    # df_data.reset_index()
-    df2 = pd.melt(summer)
+    df2 = pd.melt(winter)
     df2.drop(columns=['variable'],inplace=True)
-    df2 = df2[0:72]
-    df_data['summer_weather']= df2.value
+    df_mask = df_data[0:92]
+    df_mask['winter_weather']= df2.value
    
-    mean= df_data['summer_weather'].mean()
-    df_data['pv_labeled'] = np.where(df_data['summer_weather']>=mean , '1', '0')
+    mean= df_mask['winter_weather'].mean()
+    df_mask['pv_labeled'] = np.where(df_mask['winter_weather']>=mean , '1', '0')
     #df_data.reset_index()
-    df = df_data.copy()
+    df = df_mask.copy()
     return df 
 
 
 def statistical_labeling(df):
-    # weather zone data by hand, bom historical data as labeles ,number for each day,
-    #change 
+ 
     df['hour'] = df.dates.apply(get_hour)
     df['date'] = df.dates.apply(get_date)
 
@@ -176,12 +172,14 @@ def merged_data(manipulated_weather,df):
     #df_reset =df.reset_index()
     #df.drop(columns=['mean_mid_day'],inplace=True)
     #final_df['time'] = pd.to_datetime(manipulated_weather.time, utc=True)
+ 
     features_all = manipulated_weather.merge(df,on = ['date'])    
     features_all['labeled_target']=features_all.pv_labeled.astype(float)
-    features_all.drop(columns=['pv_labeled', 'month', 'hour', 'doy','pv_all','summer_weather'],inplace=True)
+    features_all.drop(columns=['pv_labeled', 'month', 'hour', 'doy','pv_all','winter_weather'],inplace=True)
    
     #correlation features
     # correlate = features_all.corr()
+    new_sample = features_all[0:2]
     # correlate["labeled_target"].sort_values(ascending=False).iloc[0:10]   
 
     return features_all

@@ -85,7 +85,7 @@ def manipulate_weather_data(final_df):
 
     final_df.drop(columns=['Unnamed: 0','azimuth','zenith'], inplace=True)
     wcols_to_agg = ['air_temp', 'cloudOpacity', 'dhi', 'dni', 'dni10', 'dni90', 'ebh', 'ghi', 'ghi10', 'ghi90']
-
+   
     # get just the points that happen 11-1?
     
     idx = np.where((final_df['hour']<=1) | (final_df['hour']>=11))
@@ -96,7 +96,7 @@ def manipulate_weather_data(final_df):
     renamer = {col :col + '_mean' for col in wcols_to_agg}
     weather_day_ave.rename(columns = renamer, inplace=True)
     weather_day_ave.reset_index(inplace=True)
-    
+
     # max over a day
     weather_day_max = final_df.groupby('date')[wcols_to_agg].max()
     renamer = {col :col + '_max' for col in wcols_to_agg}
@@ -127,12 +127,13 @@ def manipulate_weather_data(final_df):
     weather_mid_min.reset_index(inplace=True)
 
     # merge everything on "date":
+    
     weather_all = [weather_day_ave,weather_day_max,weather_day_min,weather_mid_ave,weather_mid_max,weather_mid_min]
     # final_weather = weather_day_ave.merge(weather_day_max).merge(weather_day_min).merge(weather_mid_ave).merge(weather_mid_max).merge(weather_mid_min)
     
     final_weather = functools.reduce(lambda  left,right: pd.merge(left,right,on=['date'], how='outer'), weather_all)
     # maybe now merge with something else like the target label
-    
+   
     return final_weather
 
 

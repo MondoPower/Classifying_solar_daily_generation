@@ -66,10 +66,8 @@ def LogisticRegression_model(X_train, y_train,X_test,y_test,dates):
     logistic_Model.fit(X_train,y_train)
     y_predictions = logistic_Model.predict(X_test)
     import pdb;pdb.set_trace()
-    predicted=[1., 1., 0., 0., 1., 1., 0., 0.]
-    new = pd.DataFrame(y_test)
-    y_test['predictions'] =predicted
     #make dataframe for less data
+    
     # df.rename(columns={'labeled_target':'actuals'},inplace=True)
     # #times =dates.iloc[0:41]
     # y_test['predictions'] =y_predictions
