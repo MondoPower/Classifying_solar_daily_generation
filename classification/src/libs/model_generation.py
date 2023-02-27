@@ -78,17 +78,21 @@ def LogisticRegression_model(X_train, y_train,X_test,y_test,dates):
     # compare['predictions'] =y_predictions
     # compare.rename(columns={'labeled_target':'actuals'},inplace=True)
     print(classification_report(y_test, y_predictions))
-   
-    # fig = go.Figure()
-    # fig.add_trace(go.Scattergl(x=df.index, y=df['actuals'],mode='lines', name='actuals', line=dict(color='red')))
-    # fig.add_trace(go.Scattergl(x=df.index, y=df['predictions'], mode='lines', name='predicted', line=dict(color='blue',dash='dash')))
-    # fig.update_yaxes(title_text='new location 11-1and 0.5Max')
-    # fig.show()
+
+    #get coeffitient figure for our model
 
     # coef = elastic_net_classifier.coef_
     # intercept = elastic_net_classifier.intercept_
     
     return y_predictions
+
+    # using bellow scatter plots for comparison
+
+    # fig = go.Figure()
+    # fig.add_trace(go.Scattergl(x=df.index, y=df['actuals'],mode='lines', name='actuals', line=dict(color='red')))
+    # fig.add_trace(go.Scattergl(x=df.index, y=df['predictions'], mode='lines', name='predicted', line=dict(color='blue',dash='dash')))
+    # fig.update_yaxes(title_text='new location 11-1and 0.5Max')
+    # fig.show()
 
    
     

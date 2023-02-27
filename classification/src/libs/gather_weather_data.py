@@ -62,17 +62,6 @@ def get_weather_data_from_timestream(start_date, horizon_hours = 24):
     return df_formatted
 
 
-def test_train_split(data_normalized, test_frac=0.15):
- 
-    data_normalized.reset_index(drop=True, inplace=True)
-    split_loc = int(np.floor(len(data_normalized)*(1-test_frac)))
-    x_train = data_normalized.loc[0:split_loc]
-    x_test = data_normalized.loc[split_loc:]
-    y_train = target.loc[0:split_loc]
-    y_test = target.loc[split_loc:]
-    
-    return x_train, y_train,x_test,y_test
-
 def manipulate_weather_data(final_df):
     
     final_df['time'] = pd.to_datetime(final_df.time, utc=True)
